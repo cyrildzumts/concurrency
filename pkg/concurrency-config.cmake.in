@@ -1,0 +1,6 @@
+
+#Report other information
+set(@TARGET@_INCLUDE_DIR "@INSTALL_INCLUDE_PATH@")
+set(@TARGET@_LIBRARY "@TARGET_LIB@")
+set(@TARGET@_FOUND "YES")
+set(@TARGET@_VERSION @VERSION@)
