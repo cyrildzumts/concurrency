@@ -18,7 +18,10 @@ set(VERSION_MAJOR 0)
 set(VERSION_MINOR 1)
 set(VERSION_PATCH 0)
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}-${VERSION_PATCH})
-
+message("Welcome to Concurrency Project" )
+message("CMAKE version in use : ${CMAKE_VERSION}")
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} include)
 # configure file
 message("CMAKE_BINARY_DIR : " ${CMAKE_BINARY_DIR})
 configure_file("config.h.in" "${CMAKE_BINARY_DIR}/config.h")
@@ -43,13 +46,34 @@ set(FIND_TARGET_MODULE "Find${TARGET}")
 message("CMAKE_INSTALL_PREFIX AFTER : " ${CMAKE_INSTALL_PREFIX})
 include_directories(include)
 set(PROJECT_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/include")
-set (HEADERS ${PROJECT_INCLUDE_DIRS}/active_object.h ${PROJECT_INCLUDE_DIRS}/safequeue.h ${PROJECT_INCLUDE_DIRS}/threadpool.h)
-set(SOURCES ${PROJECT_SOURCE_DIR}/src/*.cpp)
-add_library(${TARGET} STATIC ${SOURCES})
+set (HEADERS ${PROJECT_INCLUDE_DIRS}/activeobject.h ${PROJECT_INCLUDE_DIRS}/safequeue.h ${PROJECT_INCLUDE_DIRS}/threadpool.h)
+set(SOURCES ${PROJECT_SOURCE_DIR}/src/activeobject.cpp
+    ${PROJECT_SOURCE_DIR}/src/safequeue.cpp
+    ${PROJECT_SOURCE_DIR}/src/threadpool.cpp)
+
+set(USE_LOGGER ON)
+set(TEST_LIBS " ")
+if(USE_LOGGER)
+    find_package(Logger)
+    include(FindLogger)
+    message("Found  FindLogger.cmake")
+    message("Logger name : " ${Logger_FOUND})
+    if(Logger_FOUND)
+        include_directories(${Logger_INCLUDE_DIR})
+        message("Logger found !!" )
+        message("LOGGER_LIB" ${Logger_LIBRARY})
+        set(${TEST_LIBS} ${TEST_LIBS} ${Logger_LIBRARY})
+        message("LOGGER_INCLUDE_DIRS" ${Logger_INCLUDE_DIR})
+
+    endif()
+    option(USE_LOGGER "Use Logger Capabilities provided by Logger Lib" ON)
+endif()
+add_library(${TARGET} STATIC ${HEADERS} ${SOURCES})
+target_link_libraries(${TARGET} ${Logger_LIBRARY})
 set_target_properties(${TARGET} PROPERTIES 
     VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}
     SOVERSION ${VERSION_MAJOR}
-)
+    )
 #target_include_directories(${TARGET} PUBLIC ${PROJECT_INCLUDE_DIRS})
 
 target_include_directories(
