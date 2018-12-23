@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.0)
 PROJECT(Concurrency CXX)
+cmake_minimum_required(VERSION 3.0)
 if(${CMAKE_VERSION} VERSION_LESS 3.8)
     message("CMake current version doesn't support C++ 17 Standard \n"
             "Setting C++17 flag manually. You may considere updating you CMake version")
@@ -22,12 +22,14 @@ message("Welcome to Concurrency Project" )
 message("CMAKE version in use : ${CMAKE_VERSION}")
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} include)
+set(SOURCE_DIR ${PROJECT_SOURCE_DIR})
 # configure file
 message("CMAKE_BINARY_DIR : " ${CMAKE_BINARY_DIR})
 configure_file("config.h.in" "${CMAKE_BINARY_DIR}/config.h")
 include_directories("${CMAKE_BINARY_DIR}")
 set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} include)
 set(TARGET Concurrency)
+set(TARGET_TEST test_lib)
 if(NOT INSTALL_PATH)
     set(INSTALL_PATH "$ENV{HOME}/.local/share")
     set(INSTALL_PREFIX "${INSTALL_PATH}")
@@ -46,7 +48,11 @@ set(FIND_TARGET_MODULE "Find${TARGET}")
 message("CMAKE_INSTALL_PREFIX AFTER : " ${CMAKE_INSTALL_PREFIX})
 include_directories(include)
 set(PROJECT_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/include")
-set (HEADERS ${PROJECT_INCLUDE_DIRS}/activeobject.h ${PROJECT_INCLUDE_DIRS}/safequeue.h ${PROJECT_INCLUDE_DIRS}/threadpool.h)
+set (HEADERS ${PROJECT_INCLUDE_DIRS}/activeobject.h
+    ${PROJECT_INCLUDE_DIRS}/safequeue.h
+    ${PROJECT_INCLUDE_DIRS}/threadpool.h
+    ${PROJECT_INCLUDE_DIRS}/function_wrapper.h)
+
 set(SOURCES ${PROJECT_SOURCE_DIR}/src/activeobject.cpp
     ${PROJECT_SOURCE_DIR}/src/safequeue.cpp
     ${PROJECT_SOURCE_DIR}/src/threadpool.cpp)
@@ -68,8 +74,12 @@ if(USE_LOGGER)
     endif()
     option(USE_LOGGER "Use Logger Capabilities provided by Logger Lib" ON)
 endif()
-add_library(${TARGET} STATIC ${HEADERS} ${SOURCES})
+add_library(${TARGET} STATIC ${SOURCES} ${HEADERS})
 target_link_libraries(${TARGET} ${Logger_LIBRARY})
+
+add_executable(${TARGET_TEST} ${SOURCES} ${HEADERS} "src/main.cpp")
+target_link_libraries(${TARGET_TEST} ${TARGET})
+
 set_target_properties(${TARGET} PROPERTIES 
     VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}
     SOVERSION ${VERSION_MAJOR}
