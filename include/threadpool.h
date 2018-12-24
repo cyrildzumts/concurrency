@@ -72,11 +72,6 @@ public:
                 t.join();
             }
         });
-//        for(size_t i = 0; i< threads.size(); ++i){
-//            if(threads[i].joinable()){
-//                threads[i].join();
-//            }
-//        }
         LOG("THREADPOOL is quitting ");
     }
     /**

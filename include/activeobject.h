@@ -54,7 +54,7 @@ public:
 
     AbstractActive(): done(false){
         worker = std::unique_ptr<std::thread>(new std::thread(&AbstractActive::run, this));
-        //worker2 = std::unique_ptr<std::thread>(new std::thread(&AbstractActive::run2, this));
+
     }
 
     ~AbstractActive(){
@@ -62,11 +62,6 @@ public:
         if(worker->joinable()){
             worker->join();
         }
-        /*
-        if(worker2->joinable()){
-            worker2->join();
-        }
-        */
     }
     template<typename Func>
     std::future<typename std::result_of<Func()>::type> submit(Func f){
@@ -86,7 +81,7 @@ public:
         return result;
     }
 
-
+/*
     template<typename Callable, typename... Args,typename = std::enable_if_t<std::is_move_constructible_v<Callable>>>
     std::future<std::invoke_result_t<Callable, Args...>> place2(Callable &&op, Args&&... args){
 
@@ -101,6 +96,7 @@ public:
         return result;
     }
 
+*/
     template<typename Callable, typename... Args>
     std::future<std::invoke_result_t<Callable, Args...>> async_call(Callable &&op, Args&&... args){
         using result_type =std::invoke_result_t<Callable, Args...>;
@@ -112,9 +108,7 @@ public:
         while(!done){
             FunctionWrapper task;
             work_queue.wait_and_pop(task);
-            //is_working = true;
             task();
-            //is_working = false;
             std::this_thread::yield();
         }  
     }
