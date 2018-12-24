@@ -48,7 +48,7 @@ template <typename T>
 
         }
 
-        void push(T item)
+        void push(T &&item)
         {
             std::lock_guard<std::mutex>locker(itemMutex);
             items.push(std::move(item));

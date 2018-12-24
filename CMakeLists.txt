@@ -53,7 +53,7 @@ set (HEADERS ${PROJECT_INCLUDE_DIRS}/activeobject.h
     ${PROJECT_INCLUDE_DIRS}/threadpool.h
     ${PROJECT_INCLUDE_DIRS}/function_wrapper.h)
 
-set(SOURCES ${PROJECT_SOURCE_DIR}/src/activeobject.cpp
+set(SRCS ${PROJECT_SOURCE_DIR}/src/activeobject.cpp
     ${PROJECT_SOURCE_DIR}/src/safequeue.cpp
     ${PROJECT_SOURCE_DIR}/src/threadpool.cpp)
 
@@ -74,12 +74,14 @@ if(USE_LOGGER)
     endif()
     option(USE_LOGGER "Use Logger Capabilities provided by Logger Lib" ON)
 endif()
-add_library(${TARGET} STATIC ${SOURCES} ${HEADERS})
+add_library(${TARGET} STATIC ${SRCS} ${HEADERS})
 target_link_libraries(${TARGET} ${Logger_LIBRARY})
 
-add_executable(${TARGET_TEST} ${SOURCES} ${HEADERS} "src/main.cpp")
-target_link_libraries(${TARGET_TEST} ${TARGET})
+add_executable(${TARGET_TEST} ${SRCS} ${HEADERS} "src/main.cpp")
 
+target_link_libraries(${TARGET_TEST} ${TARGET})
+#target_link_libraries(${TARGET_TEST} ${LOGGER_LYBRARY})
+target_include_directories(${TARGET_TEST} PUBLIC include)
 set_target_properties(${TARGET} PROPERTIES 
     VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}
     SOVERSION ${VERSION_MAJOR}
