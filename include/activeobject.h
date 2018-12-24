@@ -53,7 +53,7 @@ class AbstractActive{
 public:
 
     AbstractActive(): done(false){
-        worker = std::unique_ptr<std::thread>(new std::thread(&AbstractActive::run, this));
+        worker = std::make_unique<std::thread>(&AbstractActive::run, this);
 
     }
 
