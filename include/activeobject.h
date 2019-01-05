@@ -11,16 +11,16 @@
 #include <thread>
 
 
-class AbstractActive{
+class ActiveObject{
 
 public:
 
-    AbstractActive(): done(false){
-        worker = std::make_unique<std::thread>(&AbstractActive::run, this);
+    ActiveObject(): done(false){
+        worker = std::make_unique<std::thread>(&ActiveObject::run, this);
 
     }
 
-    ~AbstractActive(){
+    ~ActiveObject(){
         interrupt();
         if(worker->joinable()){
             worker->join();
