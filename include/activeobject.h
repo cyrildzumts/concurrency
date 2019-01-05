@@ -1,8 +1,6 @@
 #ifndef ACTIVEOBJECT_H
 #define ACTIVEOBJECT_H
 
-
-
 #include "function_wrapper.h"
 #include "safequeue.h"
 #include <mutex>
@@ -11,41 +9,6 @@
 #include <log.h>
 #include <future>
 #include <thread>
-
-class Functor{
-  private :
-    int a ;
-public:
-    Functor(){
-        LOG("FUNCTOR DEFAUT CONSTRUCTED");
-    }
- /*
-    Functor(const Functor & f){
-        LOG("FUNCTOR COPY CONSTRUCTED");
-    }
-*/
-/*
-    Functor(Functor&& f){
-        LOG("FUNCTOR MOVED CONSTRUCTED");
-    }
-*/
-/*
-    Functor& operator()(const Functor &f){
-        LOG("FUNCTOR COPY ASSIGNED");
-        return  *this;
-    }
-*/
-    Functor& operator()(Functor &&f){
-        LOG("FUNCTOR MOVED ASSIGNED");
-        return  *this;
-    }
-
-    int operator()(int a, int b){
-        LOG("FUNCTOR operator()(int, int) called");
-        std::cout << "Job : thread id : " << std::this_thread::get_id() << std::endl;
-        return  a + b;
-    }
-};
 
 
 class AbstractActive{

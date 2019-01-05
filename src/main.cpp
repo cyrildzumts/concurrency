@@ -14,7 +14,7 @@ void action(int a, int b){
 int main(int argc, char **argv){
 
     LOG("Main thread", "thread id : ", std::this_thread::get_id());
-    AbstractActive active;
+    ActiveObject active;
     int a = 10;
     int b = 20;
     int ret = 0;
