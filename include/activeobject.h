@@ -26,46 +26,21 @@ public:
             worker->join();
         }
     }
-    template<typename Func>
-    std::future<typename std::result_of<Func()>::type> submit(Func f){
-        using result_type =typename std::result_of<Func()>::type;
-        std::packaged_task<result_type()> task(std::move(f));
-        std::future<result_type> result(task.get_future());
-        work_queue.push(std::move(task));
-        return result;
-    }
+
 
     template<typename Callable, typename... Args,typename = std::enable_if_t<std::is_move_constructible_v<Callable>>>
-    std::future<std::invoke_result_t<Callable, Args...>> place(Callable &&op, Args&&... args){
-        using result_type =std::invoke_result_t<Callable, Args...>;
-        std::packaged_task<result_type()> task(std::bind(std::forward<Callable>(op), std::ref(args)...));
-        std::future<result_type> result(task.get_future());
-        work_queue.push(std::move(task));
-        return result;
-    }
+        std::future<std::invoke_result_t<std::decay_t<Callable>, std::decay_t<Args>...>> submit(Callable &&op, Args&&... args){
+            using result_type =std::invoke_result_t<std::decay_t<Callable>, std::decay_t<Args>...>;
+            if(interrupted){
+                std::future<result_type> err;
+                return err;
+            }
+            std::packaged_task<result_type()> task(std::bind(std::forward<Callable>(op), std::forward<Args>(args)...));
+            std::future<result_type> result(task.get_future());
+            work_queue.push(std::move(task));
+            return result;
+   }
 
-/*
-    template<typename Callable, typename... Args,typename = std::enable_if_t<std::is_move_constructible_v<Callable>>>
-    std::future<std::invoke_result_t<Callable, Args...>> place2(Callable &&op, Args&&... args){
-
-        using result_type =std::invoke_result_t<Callable, Args...>;
-        std::packaged_task<result_type()> task(std::bind(std::forward<Callable>(op), std::ref(args)...));
-        std::future<result_type> result(task.get_future());
-        work_queue.push(std::move(task));
-//        std::lock_guard<std::mutex> lock(mux);
-//        f = std::move(task);
-//        there_is_work = true;
-//        work_cond.notify_one();
-        return result;
-    }
-
-*/
-    template<typename Callable, typename... Args>
-    std::future<std::invoke_result_t<Callable, Args...>> async_call(Callable &&op, Args&&... args){
-        using result_type =std::invoke_result_t<Callable, Args...>;
-        auto result = std::async(std::launch::async, std::forward<Callable>(op), std::ref(args)...);
-        return result;
-    }
 
     void run(){
         while(!done){
@@ -75,37 +50,25 @@ public:
             std::this_thread::yield();
         }  
     }
-/*
-    void run2(){
-        LOG("Worker 2 run in thread", " thread id : ", std::this_thread::get_id());
-        while(!done){
 
-            std::unique_lock<std::mutex> locker(mux);
-            work_cond.wait(locker,[&]{return there_is_work;});
-            is_working = true;
-            f();
-            is_working = false;
-            there_is_work = false;
-        }
-    }
-*/
     void interrupt(){
-        work_queue.push([&]{
-             done = true;
-         });
+        if(!interrupted){
+            work_queue.push([&]{
+                 done = true;
+             });
+            interrupted = true;
+        }
+
     }
+    bool getInterrupted() const{
+        return interrupted;
+    }
+
 private:
     bool done;
-    //bool is_working;
-    /*
-    bool there_is_work;
-    std::mutex mux;
-    FunctionWrapper f;
-    std::condition_variable work_cond;
-    */
+    bool interrupted;
     ThreadSafeQueue<FunctionWrapper> work_queue;
     std::unique_ptr<std::thread> worker;
-    std::unique_ptr<std::thread> worker2;
 };
 
 

@@ -33,10 +33,10 @@ public:
 class ThreadPool{
 private:
     std::atomic_bool done;
+    bool interrupted;
     size_t workers_count;
     ThreadSafeQueue<FunctionWrapper> work_queue;
     std::vector<std::thread> threads;
-    //ThreadJoins joiner;
     void run(){
         while (!done) {
             FunctionWrapper task;
@@ -47,7 +47,7 @@ private:
     }
 
 public:
-    ThreadPool(): done{false}{
+    ThreadPool(): done{false}, interrupted{false}{
         workers_count = std::thread::hardware_concurrency();
         //workers_count = 4;
         try {
@@ -61,11 +61,8 @@ public:
     }
     ~ThreadPool(){
         //Send a signal to every worker
-        for(size_t i = 0; i < workers_count; i++){
-            submit([&]{
-                done = true;
-            });
-        }
+        interrupt();
+
         // Wait for every worker to finish before quitting.
         std::for_each(threads.begin(), threads.end(), [&](std::thread &t){
             if(t.joinable()){
@@ -79,19 +76,36 @@ public:
      * a worker is free.
      * it
      */
-    template<typename Func>
-    std::future<typename std::result_of<Func()>::type> submit(Func f){
-        using result_type =typename std::result_of<Func()>::type;
-        std::packaged_task<result_type()> task(std::move(f));
+    template<typename Callable, typename... Args,typename = std::enable_if_t<std::is_move_constructible_v<Callable>>>
+    std::future<std::invoke_result_t<Callable, Args...>> submit(Callable &&op, Args&&... args){
+
+        using result_type =std::invoke_result_t<Callable, Args...>;
+        if(interrupted){
+            std::future<result_type> err;
+            return err;
+        }
+        std::packaged_task<result_type()> task(std::bind(std::forward<Callable>(op), std::forward<Args>(args)...));
         std::future<result_type> result(task.get_future());
         work_queue.push(std::move(task));
         return result;
     }
 
     void interrupt(){
-        work_queue.push([&]{
-             done = true;
-         });
+        if(!interrupted){
+            std::for_each(threads.begin(), threads.end(), [&](std::thread &t){
+                if(t.joinable()){
+                    submit([&]{
+                        done = true;
+                    });
+                }
+            });
+            interrupted = true;
+        }
+    }
+
+
+    bool getInterrupted() const{
+        return interrupted;
     }
 };
 
