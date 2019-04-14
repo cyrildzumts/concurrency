@@ -15,7 +15,9 @@ class ActiveObject{
 
 public:
 
-    ActiveObject(): done(false){
+    ActiveObject(): done(false), active{false},  interrupted{false}{
+        submitted = 0;
+        finished_tasks = 0;
         worker = std::make_unique<std::thread>(&ActiveObject::run, this);
 
     }
@@ -38,15 +40,20 @@ public:
             std::packaged_task<result_type()> task(std::bind(std::forward<Callable>(op), std::forward<Args>(args)...));
             std::future<result_type> result(task.get_future());
             work_queue.push(std::move(task));
+            ++submitted;
             return result;
    }
 
 
     void run(){
+        LOG("Active Object started from thread : ", std::this_thread::get_id());
         while(!done){
             FunctionWrapper task;
             work_queue.wait_and_pop(task);
+            active = true;
             task();
+            active = false;
+            ++finished_tasks;
             std::this_thread::yield();
         }  
     }
@@ -64,9 +71,18 @@ public:
         return interrupted;
     }
 
+    size_t getSubmitted() const;
+
+    size_t getFinished_tasks() const;
+
+    bool isActive() const;
+
 private:
     bool done;
+    bool active;
     bool interrupted;
+    size_t submitted;
+    size_t finished_tasks;
     ThreadSafeQueue<FunctionWrapper> work_queue;
     std::unique_ptr<std::thread> worker;
 };

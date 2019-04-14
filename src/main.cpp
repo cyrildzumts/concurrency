@@ -1,4 +1,4 @@
-#include "safequeue.h"
+#include <threadpool.h>
 #include <activeobject.h>
 #include <iostream>
 
@@ -7,7 +7,7 @@ using namespace std::chrono_literals;
 int job(int a,int b);
 
 void action(int a, int b){
-    LOG(" action called : ", __PRETTY_FUNCTION__);
+    LOG("Action run in thread", " thread id : ", std::this_thread::get_id());
     return;
 }
 
@@ -15,29 +15,34 @@ int main(int argc, char **argv){
 
     LOG("Main thread", "thread id : ", std::this_thread::get_id());
     ActiveObject active;
+    ThreadPool pool;
     int a = 10;
     int b = 20;
     int ret = 0;
-
+    //std::vector<std::future<int>> futures;
     for(int i = 0; i < 30; i++){
-        auto start = std::chrono::steady_clock::now();
-        auto res2 = active.place(job, a, b);
-        auto status = res2.wait_for(50us);
+        auto res = active.submit(job, a, b);
+        auto pool_res = pool.submit(action,a, b);
+        auto status = res.wait_for(80us);
         if(status == std::future_status::ready){
             try {
-                ret = res2.get();
+                ret = res.get();
             } catch (...) {
                 ret = -1;
             }
         }else {
             ret = -10;
         }
-        auto end1 = std::chrono::steady_clock::now();
-
-        LOG("RESULT 00 RET : ", ret, " : submit time end : ",
-            std::chrono::duration_cast<std::chrono::microseconds>((end1 - start)).count(), "us");
     }
-
+    pool.interrupt();
+    active.interrupt();
+    auto fut = active.submit(action, a, b);
+    try {
+        fut.get();
+        LOG("FUTURE END : ");
+    } catch (std::future_error &e) {
+        LOG("FUTURE ERROR REASON  : ",e.what() );
+    }
     std::cout << "Concurrency World ! " << std::endl;
     return 0;
 
@@ -45,7 +50,7 @@ int main(int argc, char **argv){
 
 
 int job(int a, int b){
-    //LOG("Job run in thread", " thread id : ", std::this_thread::get_id());
+    LOG("Job run in thread", " thread id : ", std::this_thread::get_id());
     std::this_thread::sleep_for(30us);
     //std::cout << "Job : thread id : " << std::this_thread::get_id() << std::endl;
     return  a + b;

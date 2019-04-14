@@ -1,6 +1,16 @@
 #include "activeobject.h"
-
-bool ActiveObject::getInterrupted() const
+size_t ActiveObject::getSubmitted() const
 {
-    return interrupted;
+    return submitted;
+}
+
+size_t ActiveObject::getFinished_tasks() const
+{
+    return finished_tasks;
+}
+
+
+bool ActiveObject::isActive() const
+{
+    return active;
 }

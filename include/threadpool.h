@@ -32,6 +32,10 @@ public:
 
 class ThreadPool{
 private:
+
+    size_t submitted;
+    size_t finished_tasks;
+    size_t active_task;
     std::atomic_bool done;
     bool interrupted;
     size_t workers_count;
@@ -41,7 +45,10 @@ private:
         while (!done) {
             FunctionWrapper task;
             work_queue.wait_and_pop(task);
+            ++active_task;
             task();
+            --active_task;
+            ++finished_tasks;
             std::this_thread::yield();
         }
     }
@@ -49,14 +56,12 @@ private:
 public:
     ThreadPool(): done{false}, interrupted{false}{
         workers_count = std::thread::hardware_concurrency();
-        //workers_count = 4;
-        try {
-            for(unsigned i = 0; i < workers_count; ++i){
-                threads.push_back(std::thread(&ThreadPool::run, this));
-            }
-        } catch (...) {
-            done = true;
-            throw;
+        submitted = 0;
+        active_task = 0;
+        finished_tasks = 0;
+
+        for(unsigned i = 0; i < workers_count; ++i){
+            threads.push_back(std::thread(&ThreadPool::run, this));
         }
     }
     ~ThreadPool(){
@@ -87,6 +92,7 @@ public:
         std::packaged_task<result_type()> task(std::bind(std::forward<Callable>(op), std::forward<Args>(args)...));
         std::future<result_type> result(task.get_future());
         work_queue.push(std::move(task));
+        ++submitted;
         return result;
     }
 
@@ -107,6 +113,9 @@ public:
     bool getInterrupted() const{
         return interrupted;
     }
+    size_t getSubmitted() const;
+    size_t getFinished_tasks() const;
+    size_t getActive_task() const;
 };
 
 
