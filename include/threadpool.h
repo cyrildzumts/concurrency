@@ -113,9 +113,15 @@ public:
     bool getInterrupted() const{
         return interrupted;
     }
-    size_t getSubmitted() const;
-    size_t getFinished_tasks() const;
-    size_t getActive_task() const;
+    size_t getSubmitted() const{
+        return submitted;
+    }
+    size_t getFinished_tasks() const{
+        return finished_tasks;
+    }
+    size_t getActive_task() const{
+        return active_task;
+    }
 };
 
 

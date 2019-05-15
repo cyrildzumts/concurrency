@@ -4,6 +4,9 @@
 #include <mutex>
 #include <memory>
 #include <condition_variable>
+#include <chrono>
+
+using namespace std;
 
 template <typename T>
     class ThreadSafeQueue
@@ -51,6 +54,9 @@ template <typename T>
         void push(T &&item)
         {
             std::lock_guard<std::mutex>locker(itemMutex);
+            last_added_at = added_at;
+            added_at = std::chrono::system_clock::now();
+            rate = added_at - last_added_at;
             items.push(std::move(item));
             itemCond.notify_one();
         }
@@ -112,9 +118,21 @@ template <typename T>
             return items;
         }
 
+        std::chrono::system_clock::duration getRate() const{
+            return  rate;
+        }
+
+        std::chrono::system_clock::time_point getLast_added() const{
+            return last_added;
+        }
+
+
     private:
         std::queue<T> items;
-
+        std::chrono::system_clock::time_point last_added_at;
+        std::chrono::system_clock::time_point added_at;
+        std::chrono::system_clock::time_point last_added;
+        std::chrono::system_clock::duration rate;
         mutable std::mutex itemMutex;
         std::condition_variable itemCond;
     };

@@ -19,6 +19,7 @@ public:
         submitted = 0;
         finished_tasks = 0;
         worker = std::make_unique<std::thread>(&ActiveObject::run, this);
+        object_id = std::hash<std::thread::id>()(worker->get_id());
 
     }
 
@@ -46,7 +47,7 @@ public:
 
 
     void run(){
-        LOG("Active Object started from thread : ", std::this_thread::get_id());
+        LOG("Active Object started from thread : ", object_id);
         while(!done){
             FunctionWrapper task;
             work_queue.wait_and_pop(task);
@@ -71,11 +72,21 @@ public:
         return interrupted;
     }
 
-    size_t getSubmitted() const;
+    size_t getSubmitted() const{
+        return submitted;
+    }
 
-    size_t getFinished_tasks() const;
+    size_t getFinished_tasks() const{
+        return finished_tasks;
+    }
 
-    bool isActive() const;
+    bool isActive() const{
+        return active;
+    }
+
+    uint64_t getObject_id() const{
+        return object_id;
+    }
 
 private:
     bool done;
@@ -83,6 +94,7 @@ private:
     bool interrupted;
     size_t submitted;
     size_t finished_tasks;
+    uint64_t object_id;
     ThreadSafeQueue<FunctionWrapper> work_queue;
     std::unique_ptr<std::thread> worker;
 };
